@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Calculadora de IP</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 12px;
+            width: 350px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        h2 {
+            text-align: center;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 8px;
+            border: none;
+            outline: none;
+        }
+        button {
+            width: 100%;
+            margin-top: 15px;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #3b82f6;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        pre {
+            margin-top: 15px;
+            background: #020617;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Calculadora de IP</h2>
+    <input type="text" id="ipInput" placeholder="192.168.1.10/24">
+    <button onclick="calcular()">Calcular</button>
+    <pre id="resultado"></pre>
+</div>
+
+<script>
+function ipToInt(ip) {
+    return ip.split('.').reduce((acc, oct) => (acc << 8) + parseInt(oct), 0) >>> 0;
+}
+
+function intToIp(int) {
+    return [
+        (int >>> 24) & 255,
+        (int >>> 16) & 255,
+        (int >>> 8) & 255,
+        int & 255
+    ].join('.');
+}
+
+function calcular() {
+    const input = document.getElementById("ipInput").value;
+
+    try {
+        const [ipStr, prefixStr] = input.split('/');
+        const prefix = parseInt(prefixStr);
+
+        const ip = ipToInt(ipStr);
+        const mask = prefix === 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) >>> 0;
+
+        const network = ip & mask;
+        const broadcast = network | (~mask >>> 0);
+
+        const totalIPs = prefix === 32 ? 1 : Math.pow(2, 32 - prefix);
+        const usableHosts = prefix >= 31 ? 0 : totalIPs - 2;
+
+        const primeiroHost = usableHosts > 0 ? intToIp(network + 1) : "N/A";
+        const ultimoHost = usableHosts > 0 ? intToIp(broadcast - 1) : "N/A";
+
+        const resultado = `
+IP: ${ipStr}
+Máscara: ${intToIp(mask)}
+Prefixo: /${prefix}
+Rede: ${intToIp(network)}
+Broadcast: ${intToIp(broadcast)}
+Total de IPs: ${totalIPs}
+Hosts utilizáveis: ${usableHosts}
+Primeiro host: ${primeiroHost}
+Último host: ${ultimoHost}
+        `;
+
+        document.getElementById("resultado").textContent = resultado;
+
+    } catch (e) {
+        document.getElementById("resultado").textContent = "Entrada inválida!";
+    }
+}
+</script>
+
+</body>
+</html>
